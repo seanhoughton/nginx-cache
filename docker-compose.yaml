@@ -1,0 +1,23 @@
+
+version: '3'
+
+services:
+
+  source:
+    image: nginx:latest
+    command: nginx-debug -g 'daemon off;'
+    volumes:
+      - .:/usr/share/nginx/html:ro
+
+  cache:
+    image: ct-registry.activision.com/indy/indy-cache:test
+    ports:
+      - 8081:80
+    environment:
+      VERBOSE: 1
+      UPSTREAM: source
+      CACHE_SIZE: 100M
+      WORKERS: 10
+      MAX_EVENTS: 1000
+      USE_PERFLOG: 0
+      SSL: 0
