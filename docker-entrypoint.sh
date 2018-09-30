@@ -3,7 +3,7 @@ set -e
 
 export VERSION=$(cat /version.txt)
 
-echo "Now running indy-cache $VERSION"
+echo "Now running nginx-cache $VERSION"
 
 export LISTENPORT=${LISTENPORT:-8888}
 export UPSTREAM=${UPSTREAM:-http://remote}
@@ -34,7 +34,9 @@ if [ "$1" = "cache" ]; then
 	shift
 
 	# Nginx will interanlly switch user. Make sure that if we mount the volume, we also gain ownership of it.
-	chown -R nginx /cache
+	# This can be very expensive and has been disabled, only the folder is changed for now
+	# chown -R nginx /cache
+	chown nginx /cache
 
 	if [ "$VERBOSE" = "1" ]; then
 		cat /etc/nginx/nginx.conf

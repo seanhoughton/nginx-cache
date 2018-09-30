@@ -1,50 +1,75 @@
-ARG nginx_version=1.15
+FROM alpine:3.8 AS base_image
 
-FROM nginx:${nginx_version} as build
+FROM base_image AS build
 
-RUN apt-get update \
-    && apt-get install -y --no-install-suggests \
-    libluajit-5.1-dev libpam0g-dev zlib1g-dev libpcre3-dev \
-    libexpat1-dev git curl build-essential \
-    && export NGINX_RAW_VERSION=$(echo $NGINX_VERSION | sed 's/-.*//g') \
-    && curl -fSL https://nginx.org/download/nginx-$NGINX_RAW_VERSION.tar.gz -o nginx.tar.gz \
-    && tar -zxC /usr/src -f nginx.tar.gz
+RUN apk add --no-cache curl build-base openssl openssl-dev zlib-dev linux-headers pcre-dev ffmpeg ffmpeg-dev
+RUN mkdir nginx nginx-vts-module
 
-ARG modules
+ENV NGINX_VERSION 1.15.3
+ENV VTS_MODULE_VERSION v0.1.18
 
-RUN export NGINX_RAW_VERSION=$(echo $NGINX_VERSION | sed 's/-.*//g') \
-    && cd /usr/src/nginx-$NGINX_RAW_VERSION \
-    && configure_args=''; IFS=','; \
-    for module in ${modules}; do \
-    module_repo=$(echo $module | sed -E 's@^(((https?|git)://)?[^:]+).*@\1@g'); \
-    module_tag=$(echo $module | sed -E 's@^(((https?|git)://)?[^:]+):?([^:/]*)@\4@g'); \
-    dirname=$(echo "${module_repo}" | sed -E 's@^.*/|\..*$@@g'); \
-    git clone "${module_repo}"; \
-    cd ${dirname}; \
-    if [ -n "${module_tag}" ]; then git checkout "${module_tag}"; fi; \
-    cd ..; \
-    configure_args="${configure_args} --add-dynamic-module=./${dirname}"; \
-    done; unset IFS \
-    && eval ./configure ${configure_args} \
-    && make modules \
-    && mkdir /modules \
-    && cp $(pwd)/objs/*.so /modules
+RUN curl -sL https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz | tar -C nginx --strip 1 -xz
+RUN curl -sL https://github.com/vozlt/nginx-module-vts/archive/${VTS_MODULE_VERSION}.tar.gz  | tar -C nginx-vts-module --strip 1 -xz
 
-FROM nginx:${nginx_version}
-COPY --from=build /modules/* /etc/nginx/modules/
+WORKDIR nginx
+RUN ./configure \
+    --prefix=/etc/nginx \
+    --sbin-path=/usr/sbin/nginx \
+    --modules-path=/usr/lib/nginx/modules \
+    --conf-path=/etc/nginx/nginx.conf \
+    --error-log-path=/var/log/nginx/error.log \
+    --http-log-path=/var/log/nginx/access.log \
+    --pid-path=/var/run/nginx.pid \
+    --lock-path=/var/run/nginx.lock \
+    --http-client-body-temp-path=/var/cache/nginx/client_temp \
+    --http-proxy-temp-path=/var/cache/nginx/proxy_temp \
+    --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp \
+    --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp \
+    --http-scgi-temp-path=/var/cache/nginx/scgi_temp \
+    --user=nginx \
+    --group=nginx \
+    --add-module=../nginx-vts-module \
+    --with-http_ssl_module \
+    --with-http_realip_module \
+    --with-http_addition_module \
+    --with-http_sub_module \
+    --with-http_gzip_static_module \
+    --with-http_auth_request_module \
+    --with-threads \
+    --with-stream \
+    --with-stream_ssl_module \
+    --with-stream_ssl_preread_module \
+    --with-stream_realip_module \
+    --with-http_slice_module \
+    --with-mail \
+    --with-mail_ssl_module \
+    --with-compat \
+    --with-file-aio \
+    --with-http_v2_module \
+    --with-cc-opt="-O3"
+RUN make
+RUN make install
 
-RUN apt-get update && apt-get install -y --no-install-suggests \
-    curl \
-    gettext
+FROM base_image
+RUN apk add --no-cache \
+    ca-certificates \
+    gettext \
+    openssl \
+    pcre \
+    tini
 
-ENV TINI_VERSION v0.18.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /sbin/tini
-RUN chmod +x /sbin/tini
+RUN addgroup -S nginx \
+    && adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
 
 COPY docker-entrypoint.sh /
+
+COPY --from=build /usr/sbin/nginx /usr/sbin/nginx
+COPY --from=build /etc/nginx /etc/nginx
+
+RUN rm -rf /etc/nginx/*.default
 COPY nginx.conf /etc/nginx/nginx.conf.tmpl
 
-RUN mkdir -p /cache /log /etc/certs.d
+RUN mkdir -p /cache /log /etc/certs.d /var/log/nginx
 COPY bad.* /etc/certs.d/
 
 VOLUME ["/cache", "/log", "/etc/certs.d"]

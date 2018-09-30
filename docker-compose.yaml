@@ -6,18 +6,28 @@ services:
   source:
     image: nginx:latest
     command: nginx-debug -g 'daemon off;'
+    ports:
+      - 8080:80
     volumes:
       - .:/usr/share/nginx/html:ro
 
   cache:
-    image: ct-registry.activision.com/indy/indy-cache:test
+    image: seanhoughton/nginx-cache:test
     ports:
       - 8081:80
     environment:
+      LISTENPORT: 80
       VERBOSE: 1
-      UPSTREAM: source
+      UPSTREAM: http://source:80
       CACHE_SIZE: 100M
       WORKERS: 10
       MAX_EVENTS: 1000
       USE_PERFLOG: 0
-      SSL: 0
+      SSL: 'off'
+
+  exporter:
+      image: sophos/nginx-vts-exporter:latest
+      ports:
+        - 9913:9913
+      environment:
+        NGINX_STATUS: "http://cache/status/format/json"
