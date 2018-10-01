@@ -2,20 +2,26 @@
 
 A simple frontend for caching requests to an upstream source. This is a custom-built Nginx with modules statically linked in. The VTS module is included for live metrics.
 
-
-# Volumes
+## Volumes
 
 | Path   | Description                 |
 | ------ | --------------------------- |
 | /cache | Store nginx cache data here |
 
-# Endpoints
+## Endpoints
 
 | URL     |              |
 | ------- | ------------ |
 | /status | Live metrics |
 
-# Environment variables
+## Purging
+
+This module has cache purging enable with no restrictions on IP range. To purge the cache use the `PURGE` method with a wildcard.
+
+    curl -X PURGE -D – "https://www.example.com/*"
+
+
+## Environment variables
 | Name             | Default                                                       | Description                                                                                                                   |
 | ---------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | LISTENPORT       | 8888                                                          | Bind the webserver to this port (useful for host network)                                                                     |
@@ -34,7 +40,8 @@ A simple frontend for caching requests to an upstream source. This is a custom-b
 | CERTIFICATE_KEY  | /etc/certs.d/bad.key                                          | Use this to map in a proper key                                                                                               |
 
 
-# Resources
+## Resources
 
 * https://www.nginx.com/blog/nginx-caching-guide/
+* https://github.com/FRiCKLE/ngx_cache_purge
 * https://github.com/vozlt/nginx-module-vts/

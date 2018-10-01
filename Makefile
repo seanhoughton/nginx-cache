@@ -25,7 +25,7 @@ VTX_MODULE=https://github.com/vozlt/nginx-module-vts.git:v0.1.17
 .PHONY: image run clean
 
 image:
-	docker build --build-arg VERSION=$(VERSION) --build-arg modules=$(VTX_MODULE) $(BUILDOPTS) -t $(IMAGENAME):$(TAG) .
+	docker build --build-arg VERSION=$(VERSION) $(BUILDOPTS) -t $(IMAGENAME):$(TAG) .
 	docker images $(IMAGENAME):$(TAG)
 
 up:
