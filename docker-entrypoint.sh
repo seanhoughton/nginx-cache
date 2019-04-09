@@ -7,6 +7,8 @@ echo "Now running nginx-cache $VERSION"
 
 export LISTENPORT=${LISTENPORT:-8888}
 export UPSTREAM=${UPSTREAM:-http://remote}
+export UPSTREAM_PROTOCOL=${UPSTREAM_PROTOCOL:-http}
+export UPSTREAM_OPTS=${UPSTREAM_OPTS:-max_fails=5 fail_timeout=15s}
 export WORKERS=${WORKERS:-4}
 export MAX_EVENTS=${MAX_EVENTS:-1024}
 export SENDFILE=${SENDFILE:-on}
@@ -28,7 +30,15 @@ if [ "$USE_PERFLOG" = "1" ]; then
 	export ACCESS_LOG_STATEMENT='access_log  /log/access.log upstream_time;'
 fi
 
-envsubst '${SSL} ${CERTIFICATE} ${CERTIFICATE_KEY} ${LISTENPORT} ${UPSTREAM} ${WORKERS} ${MAX_EVENTS} ${SENDFILE} ${TCP_NOPUSH} ${CACHE_SIZE} ${CACHE_AGE} ${CACHE_MEM} ${ACCESS_LOG_STATEMENT} ${PROXY_CACHE_LOCK}' > /etc/nginx/nginx.conf < /etc/nginx/nginx.conf.tmpl
+
+export UPSTREAM_SERVERS=$(echo $UPSTREAM | tr ";" "\n" | sed -e "s/^\(.*\)$/        server \1 ${UPSTREAM_OPTS};/")
+
+echo -e "Servers:\n${UPSTREAM_SERVERS}"
+
+SUBSTVARS='${SSL} ${CERTIFICATE} ${CERTIFICATE_KEY} ${LISTENPORT} ${UPSTREAM_SERVERS} ${WORKERS} ${MAX_EVENTS} ${SENDFILE} ${TCP_NOPUSH} ${CACHE_SIZE} ${CACHE_AGE} ${CACHE_MEM} ${ACCESS_LOG_STATEMENT} ${PROXY_CACHE_LOCK}'
+echo ${SUBSTVARS}
+
+envsubst "${SUBSTVARS}" > /etc/nginx/nginx.conf < /etc/nginx/nginx.conf.tmpl
 
 if [ "$1" = "cache" ]; then
 	shift
