@@ -1,6 +1,6 @@
 # Nginx caching proxy
 
-A simple frontend for caching requests to an upstream source. This is a custom-built Nginx with modules statically linked in. The VTS module is included for live metrics.
+A simple frontend for caching requests to an upstream source. This is a custom-built Nginx with modules statically linked in. The VTS module is included for live metrics. It supports multiple upstreams, including health check options.
 
 ## Volumes
 
@@ -43,6 +43,37 @@ This module has cache purging enable with no restrictions on IP range. To purge 
 | SSL               | off                          | Set to on, to use SSL over the listenport                                                                                     |
 | CERTIFICATE       | /etc/certs.d/bad.pem         | Use this to map in a proper certificate                                                                                       |
 | CERTIFICATE_KEY   | /etc/certs.d/bad.key         | Use this to map in a proper key                                                                                               |
+
+
+## Example Configuration
+
+The following docker compose 
+
+```yaml
+
+version: '2'
+
+services:
+  cache:
+    image: seanhoughton/nginx-cache:1.16.0
+    environment:
+      - LISTENPORT=3333
+      - UPSTREAM=server1.com:80;server2.com:80
+      - UPSTREAM_OPTS="max_fails=3 fail_timeout=30s"
+      - UPSTREAM_PROTOCOL=http
+      - CACHE_SIZE=1024g
+      - CACHE_MEM=256g
+      - CACHE_AGE=30d
+      - MAX_EVENTS=1024
+      - WORKERS=16
+    ports:
+      - 3333:3333
+    volumes:
+      - cache:/cache
+
+volumes:
+    cache:
+```
 
 
 ## Resources
