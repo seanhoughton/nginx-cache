@@ -10,6 +10,9 @@ A simple frontend for caching requests to an upstream source. This is a custom-b
 
 ## Endpoints
 
+The container includes VTS metrics module and the default `nginx.conf` includes a path
+that exposes live metrics.
+
 | URL     |              |
 | ------- | ------------ |
 | /status | Live metrics |
