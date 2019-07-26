@@ -5,7 +5,7 @@ FROM base_image AS build
 RUN apk add --no-cache curl build-base openssl openssl-dev zlib-dev linux-headers pcre-dev ffmpeg ffmpeg-dev
 RUN mkdir nginx nginx-vts-module
 
-ENV NGINX_VERSION 1.15.3
+ENV NGINX_VERSION 1.16.0
 ENV VTS_MODULE_VERSION v0.1.18
 
 RUN curl -sL https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz | tar -C nginx --strip 1 -xz
