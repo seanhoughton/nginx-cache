@@ -10,7 +10,7 @@ services:
     environment:
       LISTENPORT: 80
       VERBOSE: 1
-      UPSTREAM: iw8-ark-ceph-store01.ct.activision.com:32019;iw8-ark-ceph-store02.ct.activision.com:32019;iw8-ark-ceph-store03.ct.activision.com:32019
+      UPSTREAM: ct-host-u118.ct.activision.com:3333
       UPSTREAM_OPTS: max_fails=3 fail_timeout=30s
       UPSTREAM_PROTOCOL: http
       CACHE_SIZE: 1000M
