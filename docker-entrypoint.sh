@@ -20,7 +20,7 @@ export CACHE_SIZE=${CACHE_SIZE:-1G}
 export CACHE_MEM=${CACHE_MEM:-10m}
 export CACHE_AGE=${CACHE_AGE:-365d}
 
-export USE_PERFLOG=${USE_PERFLOG:-0}
+export STDERR_ERR_LOG=${STDERR_ERR_LOG:-0}
 export PROXY_CACHE_LOCK=${PROXY_CACHE_LOCK:-on}
 
 export SSL=${SSL:-off}
@@ -28,8 +28,10 @@ export CERTIFICATE=${CERTIFICATE:-/etc/certs.d/bad.pem}
 export CERTIFICATE_KEY=${CERTIFICATE_KEY:-/etc/certs.d/bad.key}
 
 
-if [ "$USE_PERFLOG" = "1" ]; then
-	export ACCESS_LOG_STATEMENT='access_log  /log/access.log upstream_time;'
+if [ "$STDERR_ERR_LOG" = "1" ]; then
+	export ERR_LOG='stderr warn'
+else
+	export ERR_LOG='/var/log/nginx/error.log warn'
 fi
 
 
@@ -37,9 +39,7 @@ export UPSTREAM_SERVERS=$(echo $UPSTREAM | tr ";" "\n" | sed -e "s/^\(.*\)$/    
 
 echo -e "Servers:\n${UPSTREAM_SERVERS}"
 
-SUBSTVARS='${SSL} ${CERTIFICATE} ${CERTIFICATE_KEY} ${LISTENPORT} ${UPSTREAM_SERVERS} ${WORKERS} ${MAX_EVENTS} ${SENDFILE} ${TCP_NOPUSH} ${BODY_BUFFER_SIZE} ${CACHE_SIZE} ${CACHE_AGE} ${CACHE_MEM} ${ACCESS_LOG_STATEMENT} ${PROXY_CACHE_LOCK} ${CUSTOM_CONFIGURATION}'
-echo ${SUBSTVARS}
-
+SUBSTVARS='${SSL} ${CERTIFICATE} ${CERTIFICATE_KEY} ${LISTENPORT} ${UPSTREAM_SERVERS} ${WORKERS} ${MAX_EVENTS} ${SENDFILE} ${TCP_NOPUSH} ${BODY_BUFFER_SIZE} ${CACHE_SIZE} ${CACHE_AGE} ${CACHE_MEM} ${ERR_LOG} ${PROXY_CACHE_LOCK} ${CUSTOM_CONFIGURATION}'
 envsubst "${SUBSTVARS}" > /etc/nginx/nginx.conf < /etc/nginx/nginx.conf.tmpl
 
 if [ "$1" = "cache" ]; then
